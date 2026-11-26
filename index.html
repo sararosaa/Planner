@@ -127,6 +127,31 @@ dialog{max-height:90vh;overflow:auto}
 .cvb{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}
 .cvb input{font-size:13px;padding:8px}
 .cvb button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px;font:500 14px "DM Sans",sans-serif;cursor:pointer}
+.mon{height:96px;align-items:flex-end}
+.mon .mb{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;background:none;border:0;padding:0;gap:3px;cursor:pointer;color:inherit}
+.mb .mn{font-size:11px;font-weight:700;height:14px;line-height:14px;color:#fff}
+.row:has(.big) .mb i{flex:none;width:100%;background:rgba(255,255,255,.45);border-radius:4px 4px 0 0}
+.row:has(.big) .mb.sel i{background:#fff}
+.row:has(.big) .ml span.sel{color:#fff;font-weight:700}
+.msum{margin-top:12px;font-size:15px}
+.mon{height:84px}
+.mb{flex:1;height:100%;display:flex;align-items:flex-end;background:none;border:0;padding:0;cursor:pointer}
+.mb i{display:block;width:100%}
+.row:has(.big) .mb i{background:rgba(255,255,255,.45)}
+.row:has(.big) .mb.on i{background:#fff}
+.ml span.on{color:#fff;font-weight:700}
+.mcap{margin-top:10px;font-size:15px;color:rgba(255,255,255,.85)}.mcap b{color:#fff}
+.rkh{width:100%;display:flex;justify-content:space-between;align-items:center;margin-top:26px;padding:16px 18px;border:0;border-radius:18px;background:var(--card);box-shadow:var(--sh);color:var(--ink);font:600 18px Fraunces,Georgia,serif;cursor:pointer}
+.rkh span:last-child{font:500 14px "DM Sans",sans-serif;color:var(--mute)}
+.hrt{border:0;background:none;font-size:24px;line-height:1;color:var(--mute);cursor:pointer;padding:4px;flex:none}
+.hrt.on{color:var(--trab)}
+.cv.sm{width:40px;height:58px}
+.fgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (min-width:520px){.fgrid{grid-template-columns:repeat(3,1fr)}}
+.fc{position:relative;background:var(--card);border-radius:18px;box-shadow:var(--sh);padding:10px;cursor:pointer}
+.fc img,.fcp{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block}
+.fcp{background:linear-gradient(135deg,#4B3AB0,#7B5CE0);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;font:600 15px Fraunces,Georgia,serif}
+.fc .hrt{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.45);border-radius:50%;width:34px;height:34px;color:#FF8DB4;font-size:18px;padding:0}
 </style>
 </head>
 <body>
@@ -136,7 +161,7 @@ dialog{max-height:90vh;overflow:auto}
 <dialog id="dlg"></dialog>
 <script>
 var KEY='planner-faculdade-v1',COLORS=['#1F6F6B','#C98A0B','#B04268','#3B6EA5','#7A5BA6','#5E8C3A'];
-var S={subjects:[],tasks:[],books:[]},view='semana',filt='Todos',wk=0,rk='pg',showDone=false,mk=ym(new Date()),dlg=document.getElementById('dlg');
+var S={subjects:[],tasks:[],books:[]},view='semana',filt='Todos',wk=0,rk='pg',showDone=false,rkOpen=false,lv='e',mk=ym(new Date()),dlg=document.getElementById('dlg');
 try{var raw=localStorage.getItem(KEY);if(raw)S=JSON.parse(raw)}catch(e){}
 S.semesters=S.semesters||[];
 if(!S.semesters.length){var _y=new Date();S.semesters.push({id:'s0',name:_y.getFullYear()+'.'+(_y.getMonth()<6?1:2)});S.cur='s0'}
@@ -188,10 +213,11 @@ function vMaterias(){
 }
 function bookRow(b){
   var p=b.total?Math.min(100,Math.round(b.page/b.total*100)):0;
-  return '<div class="row bk" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img class="cv" src="'+b.cover+'" alt="Capa de '+esc(b.title)+'">':'')+'<div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+(b.author?' · ':'')+b.status+(b.rating&&+b.rating?' · <span class="st">'+stars(b.rating)+'</span>':'')+'</div>'+(b.total?'<div class="pbar"><div class="bar"><i style="width:'+p+'%"></i></div><b>'+p+'%</b></div><div class="m">Página '+b.page+' de '+b.total+'</div>':(b.status==='Lendo'?'<div class="m">Edite o livro e informe o total de páginas para ver o percentual lido.</div>':''))+(b.status==='Lendo'&&b.total?'<div class="pg"><button data-pg="'+b.id+'" data-n="-10">-10</button><button data-pg="'+b.id+'" data-n="10">+10</button><button data-pg="'+b.id+'" data-n="25">+25</button></div>':'')+'</div></div>';
+  return '<div class="row bk" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img class="cv" src="'+b.cover+'" alt="Capa de '+esc(b.title)+'">':'')+'<div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+(b.author?' · ':'')+b.status+(b.rating&&+b.rating?' · <span class="st">'+stars(b.rating)+'</span>':'')+'</div>'+(b.total&&b.status!=='Lido'?'<div class="pbar"><div class="bar"><i style="width:'+p+'%"></i></div><b>'+p+'%</b></div><div class="m">Página '+b.page+' de '+b.total+'</div>':(b.status==='Lendo'?'<div class="m">Edite o livro e informe o total de páginas para ver o percentual lido.</div>':(b.status==='Lido'&&b.total?'<div class="m">'+b.total+' páginas</div>':'')))+(b.status==='Lendo'&&b.total?'<div class="pg"><button data-pg="'+b.id+'" data-n="-10">-10</button><button data-pg="'+b.id+'" data-n="10">+10</button><button data-pg="'+b.id+'" data-n="25">+25</button></div>':'')+'</div><button class="hrt'+(b.fav==='1'?' on':'')+'" data-fav="'+b.id+'" aria-label="Favoritar">'+(b.fav==='1'?'♥':'♡')+'</button></div>';
 }
 function vLivros(){
-  var h='<h1>Meus livros</h1>';
+  var h='<h1>Meus livros</h1><div class="seg"><button data-lv="e" class="'+(lv==='e'?'on':'')+'">Estante</button><button data-lv="f" class="'+(lv==='f'?'on':'')+'">♥ Favoritos</button></div>';
+  if(lv==='f'){var fv=S.books.filter(function(b){return b.fav==='1'});return h+(fv.length?'<div class="fgrid">'+fv.map(favCard).join('')+'</div>':'<div class="empty">Toque no coração de um livro para ele aparecer aqui.</div>')}
   if(!S.books.length)return h+'<div class="empty">Adicione o livro que você está lendo e acompanhe as páginas.</div>';
   [['Lendo','Lendo agora'],['Quero ler','Quero ler'],['Lido','Já lidos']].forEach(function(g){var l=S.books.filter(function(b){return b.status===g[0]});if(l.length)h+='<h2>'+g[1]+'</h2>'+l.map(bookRow).join('')});
   return h;
@@ -215,14 +241,38 @@ function vSemana(){
   return h;
 }
 function stars(n){n=+n||0;return '★★★★★'.slice(0,n)+'☆☆☆☆☆'.slice(0,5-n)}
+function monthStats(yr){
+  var ys=S.books.filter(function(b){return b.status==='Lido'&&(b.finished||'').slice(0,4)===yr}),pm=[];
+  for(var i=1;i<=12;i++){var k=yr+'-'+String(i).padStart(2,'0'),l=ys.filter(function(b){return b.finished===k});pm.push({k:k,n:l.length,p:l.reduce(function(a,b){return a+(b.total||0)},0)})}
+  return {ys:ys,pm:pm,tot:pm.reduce(function(a,m){return a+m.p},0)};
+}
+function readRow(b){
+  return '<div class="row bk" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img class="cv" src="'+b.cover+'" alt="Capa de '+esc(b.title)+'">':'')+'<div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+(b.total?(b.author?' · ':'')+b.total+' páginas':'')+(+b.rating?' · <span class="st">'+stars(b.rating)+'</span>':'')+'</div></div></div>';
+}
+function readRow(b){return '<div class="row bk" style="align-items:center" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img class="cv sm" src="'+b.cover+'" alt="">':'')+'<div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+'</div></div>'+(+b.rating?'<span class="st">'+stars(b.rating)+'</span>':'')+'<button class="hrt'+(b.fav==='1'?' on':'')+'" data-fav="'+b.id+'" aria-label="Favoritar">'+(b.fav==='1'?'♥':'♡')+'</button></div>'}
+function favCard(b){return '<div class="fc" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img src="'+b.cover+'" alt="Capa de '+esc(b.title)+'">':'<div class="fcp">'+esc(b.title)+'</div>')+'<div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+'</div>'+(+b.rating?'<div class="st">'+stars(b.rating)+'</div>':'')+'<button class="hrt on" data-fav="'+b.id+'" aria-label="Remover dos favoritos">♥</button></div>'}
+function yearBooks(yr){return S.books.filter(function(b){return b.status==='Lido'&&(b.finished||'').slice(0,4)===yr})}
 function pagBlock(yr){
-  var ys=S.books.filter(function(b){return b.status==='Lido'&&(b.finished||'').slice(0,4)===yr});
-  var sum=function(a){return a.reduce(function(x,b){return x+(b.total||0)},0)},tot=sum(ys),pm=[];
-  for(var i=1;i<=12;i++){var k=yr+'-'+String(i).padStart(2,'0');pm.push(sum(ys.filter(function(b){return b.finished===k})))}
-  var mx=Math.max.apply(null,pm.concat([1]));
-  var h='<h2>Paginômetro de '+yr+'</h2><div class="row" style="display:block;cursor:default"><div class="big">'+tot+'</div><div class="m">páginas lidas em '+yr+'</div>';
-  h+='<div class="mon">'+pm.map(function(v){return '<i title="'+v+' páginas" style="height:'+Math.max(3,Math.round(v/mx*100))+'%"></i>'}).join('')+'</div><div class="ml">'+'JFMAMJJASOND'.split('').map(function(c){return '<span>'+c+'</span>'}).join('')+'</div></div>';
-  h+='<h2>Ranking do ano</h2><div class="filters"><button data-rk="pg" class="'+(rk==='pg'?'on':'')+'">Por páginas</button><button data-rk="st" class="'+(rk==='st'?'on':'')+'">Por estrelas</button></div>';
+  var ys=yearBooks(yr),sum=function(a){return a.reduce(function(x,b){return x+(b.total||0)},0)},pm=[],cn=[];
+  for(var i=1;i<=12;i++){var k=yr+'-'+String(i).padStart(2,'0'),l=ys.filter(function(b){return b.finished===k});pm.push(sum(l));cn.push(l.length)}
+  var mx=Math.max.apply(null,pm.concat([1])),MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],mi=mk.slice(0,4)===yr?+mk.slice(5,7)-1:-1;
+  var h='<h2>Paginômetro de '+yr+'</h2><div class="row" style="display:block;cursor:default"><div class="big">'+sum(ys)+'</div><div class="m">páginas lidas em '+yr+' ('+ys.length+(ys.length===1?' livro':' livros')+')</div>';
+  h+='<div class="mon">'+pm.map(function(v,i){return '<button class="mb'+(i===mi?' on':'')+'" data-pm="'+yr+'-'+String(i+1).padStart(2,'0')+'" aria-label="'+MN[i]+'"><i style="height:'+Math.max(4,Math.round(v/mx*100))+'%"></i></button>'}).join('')+'</div>';
+  h+='<div class="ml">'+MN.map(function(m,i){return '<span'+(i===mi?' class="on"':'')+'>'+m+'</span>'}).join('')+'</div>';
+  h+='<div class="mcap">'+(mi>=0?'<b>'+MN[mi]+'</b>: '+cn[mi]+(cn[mi]===1?' livro':' livros')+', '+pm[mi]+' páginas':'Toque em um mês para ver o resumo')+'</div></div>';
+  return h;
+}
+function rankBlock(yr){
+  var ys=yearBooks(yr),h='<button class="rkh" data-rko="1" aria-expanded="'+rkOpen+'"><span>Ranking de '+yr+'</span><span>'+ys.length+(rkOpen?' ▴':' ▾')+'</span></button>';
+  if(!rkOpen)return h;
+  h+='<div class="filters" style="margin-top:12px"><button data-rk="pg" class="'+(rk==='pg'?'on':'')+'">Por páginas</button><button data-rk="st" class="'+(rk==='st'?'on':'')+'">Por estrelas</button></div>';
+  if(!ys.length)return h+'<div class="empty">Os livros que você marcar como Lido aparecem aqui.</div>';
+  var by=rk==='st'?function(a,b){return (+b.rating||0)-(+a.rating||0)||(b.total||0)-(a.total||0)}:function(a,b){return (b.total||0)-(a.total||0)};
+  return h+ys.slice().sort(by).map(function(b,i){return '<div class="row" tabindex="0" data-book="'+b.id+'"><span class="rkn">'+(i+1)+'</span><div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'Autor não informado')+'</div></div><div style="text-align:right"><div class="t">'+(b.total||0)+' p.</div><div class="st">'+stars(b.rating)+'</div></div></div>'}).join('');
+}
+function rankBlock(yr){
+  var ys=monthStats(yr).ys;
+  var h='<h2>Ranking do ano</h2><div class="filters"><button data-rk="pg" class="'+(rk==='pg'?'on':'')+'">Por páginas</button><button data-rk="st" class="'+(rk==='st'?'on':'')+'">Por estrelas</button></div>';
   if(!ys.length)return h+'<div class="empty">Os livros que você marcar como Lido aparecem aqui.</div>';
   var by=rk==='st'?function(a,b){return (+b.rating||0)-(+a.rating||0)||(b.total||0)-(a.total||0)}:function(a,b){return (b.total||0)-(a.total||0)};
   return h+ys.slice().sort(by).map(function(b,i){return '<div class="row" tabindex="0" data-book="'+b.id+'"><span class="rkn">'+(i+1)+'</span><div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'Autor não informado')+'</div></div><div style="text-align:right"><div class="t">'+(b.total||0)+' p.</div><div class="st">'+stars(b.rating)+'</div></div></div>'}).join('');
@@ -230,14 +280,13 @@ function pagBlock(yr){
 function vLeituras(){
   var p=mk.split('-'),nm=cap(new Date(+p[0],p[1]-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}));
   var l=S.books.filter(function(b){return b.status==='Lido'&&b.finished===mk}),pg=l.reduce(function(a,b){return a+(b.total||0)},0);
-  var ny=S.books.filter(function(b){return b.status==='Lido'&&(b.finished||'').slice(0,4)===p[0]}).length;
   var cur=ym(new Date())===mk?S.books.filter(function(b){return b.status==='Lendo'}):[];
   var h='<h1>Leituras do mês</h1><div class="wk"><button data-mk="-1" aria-label="Mês anterior">‹</button><b>'+nm+'</b><button data-mk="1" aria-label="Próximo mês">›</button></div>';
-  h+='<p class="sub">'+l.length+(l.length===1?' livro lido':' livros lidos')+(pg?', '+pg+' páginas':'')+'. No ano: '+ny+'.</p>';
-  h+=pagBlock(p[0])+'<h2>Lidos em '+nm+'</h2>';
-  h+=l.length?l.map(bookRow).join(''):'<div class="empty">Nenhum livro concluído neste mês. Toque em + Leitura para registrar.</div>';
+  h+='<p class="sub">'+l.length+(l.length===1?' livro lido':' livros lidos')+(pg?', '+pg+' páginas':'')+'</p>';
+  h+=pagBlock(p[0]);
+  h+='<h2>Lidos em '+nm+'</h2>'+(l.length?l.map(readRow).join(''):'<div class="empty">Nenhum livro concluído neste mês. Toque em + Leitura para registrar.</div>');
   if(cur.length)h+='<h2>Em andamento</h2>'+cur.map(bookRow).join('');
-  return h;
+  return h+rankBlock(p[0]);
 }
 function backupBlock(){return '<h2>Backup dos dados</h2><p class="sub">Salve uma cópia para não perder nada ou para levar tudo para outro aparelho.</p><div class="wk"><button data-exp="1">Exportar</button><button data-imp="1">Importar</button></div><input type="file" id="impF" accept="application/json,.json" hidden>'}
 function render(){
@@ -286,7 +335,7 @@ function coverUI(cur,set){
 function editBook(id,pre){
   var b=S.books.filter(function(x){return x.id===id})[0]||Object.assign({status:'Lendo',page:0,total:0,finished:''},pre||{});
   var cv=b.cover||'';
-  form(id?'Editar livro':'Novo livro',[{k:'title',l:'Título'},{k:'author',l:'Autor(a)'},{k:'total',l:'Total de páginas',t:'number'},{k:'page',l:'Página atual',t:'number'},{k:'status',l:'Situação',o:[['Lendo','Lendo'],['Quero ler','Quero ler'],['Lido','Lido']]},{k:'finished',l:'Mês em que terminou',t:'month'},{k:'rating',l:'Estrelas',o:[['0','Sem nota'],['1','★ (1)'],['2','★★ (2)'],['3','★★★ (3)'],['4','★★★★ (4)'],['5','★★★★★ (5)']]}],b,
+  form(id?'Editar livro':'Novo livro',[{k:'title',l:'Título'},{k:'author',l:'Autor(a)'},{k:'total',l:'Total de páginas',t:'number'},{k:'page',l:'Página atual',t:'number'},{k:'status',l:'Situação',o:[['Lendo','Lendo'],['Quero ler','Quero ler'],['Lido','Lido']]},{k:'finished',l:'Mês em que terminou',t:'month'},{k:'rating',l:'Estrelas',o:[['0','Sem nota'],['1','★ (1)'],['2','★★ (2)'],['3','★★★ (3)'],['4','★★★★ (4)'],['5','★★★★★ (5)']]},{k:'fav',l:'Favorito',o:[['0','Não'],['1','Sim ♥']]}],b,
     function(o){o.cover=cv;if(o.status==='Lido'){if(o.total)o.page=o.total;if(!o.finished)o.finished=ym(new Date())}else o.finished='';if(id)Object.assign(b,o);else{o.id=uid();S.books.push(o)}},id?function(){S.books=S.books.filter(function(x){return x.id!==id})}:null);
   coverUI(cv,function(v){cv=v});
 }
@@ -297,6 +346,11 @@ document.addEventListener('click',function(e){
   if(t.id==='addBtn'){if(view==='leituras')editBook(null,{status:'Lido',finished:mk});else ({semana:editTask,tarefas:editTask,materias:editSub,livros:editBook})[view]();return}
   if(q('data-exp')){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='planner-backup-'+ymd(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();return}
   if(q('data-imp')){document.getElementById('impF').click();return}
+  if(q('data-mo')){mk=q('data-mo');render();return}
+  if(q('data-fav')){var bk=S.books.filter(function(x){return x.id===q('data-fav')})[0];bk.fav=bk.fav==='1'?'0':'1';save();render();return}
+  if(q('data-pm')){mk=q('data-pm');render();return}
+  if(q('data-rko')){rkOpen=!rkOpen;render();return}
+  if(q('data-lv')){lv=q('data-lv');render();return}
   if(q('data-sd')){showDone=q('data-sd')==='1';render();return}
   if(q('data-rk')){rk=q('data-rk');render();return}
   if(q('data-newsem')){form('Novo semestre',[{k:'name',l:'Nome do semestre (ex.: 2027.1)'}],{name:nextSem()},function(o){var id=uid();S.semesters.push({id:id,name:o.name});S.cur=id},null);return}
