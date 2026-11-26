@@ -108,6 +108,25 @@ dialog{border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:22px}
 input,select{border-radius:12px;padding:12px}
 input:focus,select:focus{border-color:var(--acc)}
 .acts button{border-radius:14px;padding:13px}
+:root{--tarefa:#178A7A}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tarefa:#5FD6BF}}
+.Tarefa{color:var(--tarefa)}
+.row:has(.tag.Tarefa){box-shadow:inset 5px 0 0 var(--tarefa),var(--sh)}
+.seg{display:flex;background:var(--card);border-radius:99px;padding:4px;box-shadow:var(--sh);margin:12px 0}
+.seg button{flex:1;border:0;background:none;color:var(--mute);border-radius:99px;padding:10px;font:700 14px "DM Sans",sans-serif;cursor:pointer}
+.seg button.on{background:var(--acc);color:var(--accfg)}
+.pbar{display:flex;align-items:center;gap:12px;margin:10px 0 4px}
+.pbar .bar{flex:1;margin:0}
+.pbar b{font:600 20px Fraunces,Georgia,serif;color:var(--acc);min-width:52px;text-align:right}
+.row.bk{align-items:flex-start}
+.cv{width:56px;height:82px;object-fit:cover;border-radius:8px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+dialog{max-height:90vh;overflow:auto}
+.cvr{display:flex;gap:14px;align-items:center}
+.cvp{width:70px;height:100px;border:1.5px dashed var(--line);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--mute);overflow:hidden;flex:none}
+.cvp img{width:100%;height:100%;object-fit:cover}
+.cvb{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}
+.cvb input{font-size:13px;padding:8px}
+.cvb button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px;font:500 14px "DM Sans",sans-serif;cursor:pointer}
 </style>
 </head>
 <body>
@@ -117,7 +136,7 @@ input:focus,select:focus{border-color:var(--acc)}
 <dialog id="dlg"></dialog>
 <script>
 var KEY='planner-faculdade-v1',COLORS=['#1F6F6B','#C98A0B','#B04268','#3B6EA5','#7A5BA6','#5E8C3A'];
-var S={subjects:[],tasks:[],books:[]},view='semana',filt='Todos',wk=0,rk='pg',mk=ym(new Date()),dlg=document.getElementById('dlg');
+var S={subjects:[],tasks:[],books:[]},view='semana',filt='Todos',wk=0,rk='pg',showDone=false,mk=ym(new Date()),dlg=document.getElementById('dlg');
 try{var raw=localStorage.getItem(KEY);if(raw)S=JSON.parse(raw)}catch(e){}
 S.semesters=S.semesters||[];
 if(!S.semesters.length){var _y=new Date();S.semesters.push({id:'s0',name:_y.getFullYear()+'.'+(_y.getMonth()<6?1:2)});S.cur='s0'}
@@ -149,9 +168,11 @@ function vHoje(){
   return h;
 }
 function vTarefas(){
-  var types=['Todos','Prova','Trabalho','Tarefa'],h='<h1>Provas e trabalhos</h1><div class="filters">'+types.map(function(t){return '<button data-f="'+t+'" class="'+(filt===t?'on':'')+'">'+t+'</button>'}).join('')+'</div>';
-  var l=T().filter(function(t){return filt==='Todos'||t.type===filt}).sort(function(a,b){return (a.done-b.done)||sortT(a,b)});
-  return h+(l.length?l.map(taskRow).join(''):'<div class="empty">Nada por aqui ainda.</div>');
+  var types=['Todos','Prova','Trabalho','Tarefa'];
+  var h='<h1>Provas e trabalhos</h1><div class="seg"><button data-sd="0" class="'+(!showDone?'on':'')+'">Pendentes</button><button data-sd="1" class="'+(showDone?'on':'')+'">Concluídas</button></div>';
+  h+='<div class="filters">'+types.map(function(t){return '<button data-f="'+t+'" class="'+(filt===t?'on':'')+'">'+t+'</button>'}).join('')+'</div>';
+  var l=T().filter(function(t){return !!t.done===showDone&&(filt==='Todos'||t.type===filt)}).sort(function(a,b){return showDone?sortT(b,a):sortT(a,b)});
+  return h+(l.length?l.map(taskRow).join(''):'<div class="empty">'+(showDone?'Nada concluído ainda. Quando você marcar um item como feito, ele aparece aqui.':'Nada pendente. Toque em Adicionar para criar um item.')+'</div>');
 }
 function T(){return S.tasks.filter(function(t){return t.sem===S.cur})}
 function SS(){return S.subjects.filter(function(x){return x.sem===S.cur})}
@@ -167,13 +188,13 @@ function vMaterias(){
 }
 function bookRow(b){
   var p=b.total?Math.min(100,Math.round(b.page/b.total*100)):0;
-  return '<div class="row" style="display:block" data-book="'+b.id+'" tabindex="0"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+(b.author?' · ':'')+b.status+(b.rating&&+b.rating?' · <span class="st">'+stars(b.rating)+'</span>':'')+'</div>'+(b.total?'<div class="bar"><i style="width:'+p+'%"></i></div><div class="m">Página '+b.page+' de '+b.total+' ('+p+'%)</div>':'')+(b.status==='Lendo'&&b.total?'<div class="pg"><button data-pg="'+b.id+'" data-n="-10">-10</button><button data-pg="'+b.id+'" data-n="10">+10</button><button data-pg="'+b.id+'" data-n="25">+25</button></div>':'')+'</div>';
+  return '<div class="row bk" data-book="'+b.id+'" tabindex="0">'+(b.cover?'<img class="cv" src="'+b.cover+'" alt="Capa de '+esc(b.title)+'">':'')+'<div class="grow"><div class="t">'+esc(b.title)+'</div><div class="m">'+esc(b.author||'')+(b.author?' · ':'')+b.status+(b.rating&&+b.rating?' · <span class="st">'+stars(b.rating)+'</span>':'')+'</div>'+(b.total?'<div class="pbar"><div class="bar"><i style="width:'+p+'%"></i></div><b>'+p+'%</b></div><div class="m">Página '+b.page+' de '+b.total+'</div>':(b.status==='Lendo'?'<div class="m">Edite o livro e informe o total de páginas para ver o percentual lido.</div>':''))+(b.status==='Lendo'&&b.total?'<div class="pg"><button data-pg="'+b.id+'" data-n="-10">-10</button><button data-pg="'+b.id+'" data-n="10">+10</button><button data-pg="'+b.id+'" data-n="25">+25</button></div>':'')+'</div></div>';
 }
 function vLivros(){
   var h='<h1>Meus livros</h1>';
   if(!S.books.length)return h+'<div class="empty">Adicione o livro que você está lendo e acompanhe as páginas.</div>';
-  var o={Lendo:0,'Quero ler':1,Lido:2};
-  return h+S.books.slice().sort(function(a,b){return o[a.status]-o[b.status]}).map(bookRow).join('');
+  [['Lendo','Lendo agora'],['Quero ler','Quero ler'],['Lido','Já lidos']].forEach(function(g){var l=S.books.filter(function(b){return b.status===g[0]});if(l.length)h+='<h2>'+g[1]+'</h2>'+l.map(bookRow).join('')});
+  return h;
 }
 function ym(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function ymd(d){return ym(d)+'-'+String(d.getDate()).padStart(2,'0')}
@@ -252,10 +273,22 @@ function editSub(id){
     function(o){if(id)Object.assign(s,o);else{o.id=uid();o.sem=S.cur;o.color=COLORS[S.subjects.length%COLORS.length];S.subjects.push(o)}},
     id?function(){S.subjects=S.subjects.filter(function(x){return x.id!==id});S.tasks.forEach(function(t){if(t.subject===id)t.subject=''})}:null);
 }
+function coverUI(cur,set){
+  dlg.querySelector('.acts').insertAdjacentHTML('beforebegin','<label>Capa do livro</label><div class="cvr"><div class="cvp" id="cvP">'+(cur?'<img src="'+cur+'" alt="Capa">':'Sem capa')+'</div><div class="cvb"><input type="file" id="cvF" accept="image/*"><button id="cvX" type="button">Remover capa</button></div></div>');
+  var P=document.getElementById('cvP');
+  document.getElementById('cvF').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();
+    r.onload=function(){var im=new Image();
+      im.onload=function(){var k=Math.min(1,360/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);var u=c.toDataURL('image/jpeg',.82);set(u);P.innerHTML='<img src="'+u+'" alt="Capa">'};
+      im.onerror=function(){alert('Não consegui ler essa imagem.')};im.src=r.result};
+    r.readAsDataURL(f)};
+  document.getElementById('cvX').onclick=function(){set('');P.textContent='Sem capa';document.getElementById('cvF').value=''};
+}
 function editBook(id,pre){
   var b=S.books.filter(function(x){return x.id===id})[0]||Object.assign({status:'Lendo',page:0,total:0,finished:''},pre||{});
+  var cv=b.cover||'';
   form(id?'Editar livro':'Novo livro',[{k:'title',l:'Título'},{k:'author',l:'Autor(a)'},{k:'total',l:'Total de páginas',t:'number'},{k:'page',l:'Página atual',t:'number'},{k:'status',l:'Situação',o:[['Lendo','Lendo'],['Quero ler','Quero ler'],['Lido','Lido']]},{k:'finished',l:'Mês em que terminou',t:'month'},{k:'rating',l:'Estrelas',o:[['0','Sem nota'],['1','★ (1)'],['2','★★ (2)'],['3','★★★ (3)'],['4','★★★★ (4)'],['5','★★★★★ (5)']]}],b,
-    function(o){if(o.status==='Lido'){if(o.total)o.page=o.total;if(!o.finished)o.finished=ym(new Date())}else o.finished='';if(id)Object.assign(b,o);else{o.id=uid();S.books.push(o)}},id?function(){S.books=S.books.filter(function(x){return x.id!==id})}:null);
+    function(o){o.cover=cv;if(o.status==='Lido'){if(o.total)o.page=o.total;if(!o.finished)o.finished=ym(new Date())}else o.finished='';if(id)Object.assign(b,o);else{o.id=uid();S.books.push(o)}},id?function(){S.books=S.books.filter(function(x){return x.id!==id})}:null);
+  coverUI(cv,function(v){cv=v});
 }
 
 document.addEventListener('click',function(e){
@@ -264,6 +297,7 @@ document.addEventListener('click',function(e){
   if(t.id==='addBtn'){if(view==='leituras')editBook(null,{status:'Lido',finished:mk});else ({semana:editTask,tarefas:editTask,materias:editSub,livros:editBook})[view]();return}
   if(q('data-exp')){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='planner-backup-'+ymd(new Date())+'.json';document.body.appendChild(a);a.click();a.remove();return}
   if(q('data-imp')){document.getElementById('impF').click();return}
+  if(q('data-sd')){showDone=q('data-sd')==='1';render();return}
   if(q('data-rk')){rk=q('data-rk');render();return}
   if(q('data-newsem')){form('Novo semestre',[{k:'name',l:'Nome do semestre (ex.: 2027.1)'}],{name:nextSem()},function(o){var id=uid();S.semesters.push({id:id,name:o.name});S.cur=id},null);return}
   if(q('data-wk')){var w=q('data-wk');wk=w==='0'?0:wk+(+w);render();return}
